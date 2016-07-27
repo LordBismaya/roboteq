@@ -45,7 +45,11 @@ extern const int script_ver = 28;
 namespace roboteq {
 
 const std::string eol("\r");
-const std::string start_msg("\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r");
+const std::string start_msg("\r\r\r\r\r\r\r\r\r\r\r\r");
+const std::string start_msg2("\n\n\n\n\n\n\n\n\n\n\n");
+const std::string start_msg3("\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r");
+
+
 const size_t max_line_length(128);
 
 Controller::Controller(const char *port, int baud)
@@ -74,7 +78,7 @@ void Controller::connect() {
     try {
       serial_->open();
       query << "FID" << send;
-      setSerialEcho(true);
+      setSerialEcho(false);
       flush();
     } catch (serial::IOException) {
     }
@@ -91,9 +95,6 @@ void Controller::connect() {
   ROS_INFO("Motor controller not responding.");
 }
 
-void Controller::initialize(){
-  write(start_msg);flush();
-}
 
 void Controller::forward(int LR){
   if (LR==1)//1 for LEFT 2 for RIGHT
@@ -148,8 +149,31 @@ void Controller::read() {
   }
 }
 
+void Controller::initialize(){
+  int k=0;
+/*  do{
+    serial_->flushInput();
+    serial_->flushOutput();
+    write(start_msg);flush();
+    std::string msg = serial_->readline(max_line_length, eol);k++;
+  if (!msg.empty()) {
+    ROS_WARN_STREAM(msg);}
+    }while(k<10);
+*/
+    k=0;
+ do{
+    tx_buffer_.str("");
+    tx_buffer_<<'\r';serial_->write(tx_buffer_.str());
+    ROS_WARN_STREAM(tx_buffer_);
+    std::string msg = serial_->readline(max_line_length, eol);k++;
+  if (!msg.empty()) {
+    ROS_WARN_STREAM(msg);}
+    }while(k<11);
+   
+}
+
 void Controller::write(std::string msg) {
-  tx_buffer_ << msg << eol;
+  tx_buffer_ << msg << eol;ROS_WARN_STREAM(tx_buffer_);
 }
 
 void Controller::flush() {

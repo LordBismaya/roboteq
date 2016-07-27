@@ -60,11 +60,10 @@ int main(int argc, char **argv) {
   while (ros::ok()) {
     ROS_DEBUG("Attempting connection to %s at %i baud.", port.c_str(), baud);
     controller.connect();
+  
     controller.initialize();
     ROS_WARN_STREAM("Controller Connected");
-    controller.forward(1);
- 
-    
+      
     if (controller.connected()) {
       ros::AsyncSpinner spinner(1);
       spinner.start();
