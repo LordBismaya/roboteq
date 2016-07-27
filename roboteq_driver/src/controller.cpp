@@ -45,6 +45,7 @@ extern const int script_ver = 28;
 namespace roboteq {
 
 const std::string eol("\r");
+const std::string start_msg("\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r");
 const size_t max_line_length(128);
 
 Controller::Controller(const char *port, int baud)
@@ -68,16 +69,16 @@ void Controller::connect() {
   serial_->setTimeout(to);
   serial_->setPort(port_);
   serial_->setBaudrate(baud_);
-
+  ROS_WARN_STREAM("Star");
   for (int tries = 0; tries < 5; tries++) {
     try {
       serial_->open();
       query << "FID" << send;
-      setSerialEcho(false);
+      setSerialEcho(true);
       flush();
     } catch (serial::IOException) {
     }
-
+       ROS_WARN_STREAM("SENDING \n. ");
     if (serial_->isOpen()) {
       connected_ = true;
       return;
@@ -88,6 +89,19 @@ void Controller::connect() {
   }
 
   ROS_INFO("Motor controller not responding.");
+}
+
+void Controller::initialize(){
+  write(start_msg);flush();
+}
+
+void Controller::forward(int LR){
+  if (LR==1)//1 for LEFT 2 for RIGHT
+     write("!A3F");
+  else if (LR==2)
+     write("!B3F");
+     else
+      ROS_WARN_STREAM("Incorrect Motor Command");
 }
 
 void Controller::read() {
@@ -115,7 +129,7 @@ void Controller::read() {
     }
   } else {
     ROS_WARN_NAMED("serial", "Serial::readline() returned no data.");
-    if (!receiving_script_messages_) {
+   /* if (!receiving_script_messages_) {
       if (start_script_attempts_ < 5) {
         start_script_attempts_++;
         ROS_DEBUG("Attempt #%d to start MBS program.", start_script_attempts_);
@@ -130,7 +144,7 @@ void Controller::read() {
       }
     } else {
       ROS_DEBUG("Script is believed to be in-place and running, so taking no action.");
-    }
+    }*/
   }
 }
 

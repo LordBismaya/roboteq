@@ -114,8 +114,11 @@ public :
 
   void addChannel(Channel* channel);
   void connect();
+  void initialize();
+  void forward(int LR);
+  void backward(int LR);
   bool connected() { return connected_; }
-  void spinOnce() { read(); }
+  void spinOnce() { read();}
   void flush();
 
   // Send commands to motor driver.

@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
   ros::NodeHandle nh("~");
 
   std::string port = "/dev/ttyUSB0";
-  int32_t baud = 115200;
+  int32_t baud = 9600;
   nh.param<std::string>("port", port, port);
   nh.param<int32_t>("baud", baud, baud);
 
@@ -60,6 +60,11 @@ int main(int argc, char **argv) {
   while (ros::ok()) {
     ROS_DEBUG("Attempting connection to %s at %i baud.", port.c_str(), baud);
     controller.connect();
+    controller.initialize();
+    ROS_WARN_STREAM("Controller Connected");
+    controller.forward(1);
+ 
+    
     if (controller.connected()) {
       ros::AsyncSpinner spinner(1);
       spinner.start();
