@@ -11,3 +11,11 @@ Sepex: VSX18xx
 The node works by downloading a MicroBasic script to the driver, which then publishes ASCII sentences at 10Hz and 50Hz with the data corresponding to the Status and per-channel Feedback messages published by the driver.
 
 [1]: http://www.roboteq.com/index.php/docman/motor-controllers-documents-and-files/documentation/user-manual/7-nextgen-controllers-user-manual/file
+
+development log
+===============
+
+July 27
+Made changes to the code. Parity. Stop bits. and Initialization.
+The code had worked once. Not working now.
+Possible cause. random values in the _txBuffer. 
