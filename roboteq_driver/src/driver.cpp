@@ -63,7 +63,8 @@ int main(int argc, char **argv) {
   
     controller.initialize();
     ROS_WARN_STREAM("Controller Connected");
-      
+    
+    controller.forward(1);  
     if (controller.connected()) {
       ros::AsyncSpinner spinner(1);
       spinner.start();

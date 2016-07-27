@@ -98,9 +98,13 @@ void Controller::connect() {
 
 void Controller::forward(int LR){
   if (LR==1)//1 for LEFT 2 for RIGHT
-     write("!A3F");
+    {
+      tx_buffer_.str("");
+      tx_buffer_<<"!a7F\r\n";ROS_WARN_STREAM(tx_buffer_);
+      serial_->write(tx_buffer_.str());
+    }
   else if (LR==2)
-     write("!B3F");
+    tx_buffer_<<"!B3F"<<eol;
      else
       ROS_WARN_STREAM("Incorrect Motor Command");
 }
