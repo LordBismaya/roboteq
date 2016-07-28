@@ -72,12 +72,15 @@ int main(int argc, char **argv) {
     ROS_WARN_STREAM("Left Brake Check Reverse");
     controller.zeroBrakeL();  
     sleep(1);
-    
+  //  controller.leftBrake();  
+    sleep(1);
     ROS_WARN_STREAM("Right Brake Check");
     controller.rightBrake();  
     sleep(1);
     ROS_WARN_STREAM("Right Brake Check Reverse");
     controller.zeroBrakeR();  
+    sleep(1);
+    //controller.rightBrake();
     sleep(1);
 
     if (controller.connected()) {

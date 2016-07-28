@@ -248,13 +248,25 @@ void Controller::brakeCallback(const geometry_msgs::Twist::ConstPtr& twist)
     zeroBrakeR();
 }
 
+void Controller::brakeCallbackS(const geometry_msgs::Twist::ConstPtr& twist)
+{
+  if (twist->angular.x==1)
+    zeroBrakeL();
+  else 
+    leftBrake();
+  if (twist->angular.y==1)
+    zeroBrakeR();
+  else
+    rightBrake();
+}
+
 void Controller::rightBrake(){
   tx_buffer_.str("");
-  tx_buffer_<<"!B3F\r\n";serial_->write(tx_buffer_.str());ROS_WARN_STREAM(tx_buffer_);
+  tx_buffer_<<"!B7F\r\n";serial_->write(tx_buffer_.str());ROS_WARN_STREAM(tx_buffer_);
  }
 void Controller::leftBrake(){
   tx_buffer_.str("");
-  tx_buffer_<<"!A3F\r\n";serial_->write(tx_buffer_.str());ROS_WARN_STREAM(tx_buffer_);
+  tx_buffer_<<"!A7F\r\n";serial_->write(tx_buffer_.str());ROS_WARN_STREAM(tx_buffer_);
  }
 void Controller::zeroBrakeR(){
   tx_buffer_.str("");
