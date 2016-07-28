@@ -89,6 +89,9 @@ int main(int argc, char **argv) {
       while (ros::ok()) {
         controller.spinOnce();
       }
+      // Make sure brakes are in the initial position.
+      zeroBrakeR();
+      zeroBrakeL();
       spinner.stop();
     } else {
       ROS_DEBUG("Problem connecting to serial device.");

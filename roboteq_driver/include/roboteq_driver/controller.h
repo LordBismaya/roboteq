@@ -112,7 +112,7 @@ public :
   Controller (const char *port, int baud);
   ~Controller();
   void brakeCallback(const geometry_msgs::Twist::ConstPtr& twist);
-  void brakeCallbackS(const geometry_msgs::Twist::ConstPtr& twist);  
+  void brakeCallbackSafe(const geometry_msgs::Twist::ConstPtr& twist);  
   void addChannel(Channel* channel);
   void connect();
   void initialize();

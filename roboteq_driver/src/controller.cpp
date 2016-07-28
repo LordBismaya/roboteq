@@ -248,7 +248,7 @@ void Controller::brakeCallback(const geometry_msgs::Twist::ConstPtr& twist)
     zeroBrakeR();
 }
 
-void Controller::brakeCallbackS(const geometry_msgs::Twist::ConstPtr& twist)
+void Controller::brakeCallbackSafe(const geometry_msgs::Twist::ConstPtr& twist)
 {
   if (twist->angular.x==1)
     zeroBrakeL();
