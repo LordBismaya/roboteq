@@ -58,6 +58,7 @@ Controller::Controller(const char *port, int baud)
     command("!", this), query("?", this), param("^", this)
 {
   pub_status_ = nh_.advertise<roboteq_msgs::Status>("status", 1);
+  argo_cmd_sub_=nh_.subscribe<geometry_msgs::Twist>("argo_base/cmd_vel", 100, &Controller::brakeCallback, this);
 }
 
 Controller::~Controller() {
@@ -96,18 +97,6 @@ void Controller::connect() {
 }
 
 
-void Controller::forward(int LR){
-  if (LR==1)//1 for LEFT 2 for RIGHT
-    {
-      tx_buffer_.str("");
-      tx_buffer_<<"!a7F\r\n";ROS_WARN_STREAM(tx_buffer_);
-      serial_->write(tx_buffer_.str());
-    }
-  else if (LR==2)
-    tx_buffer_<<"!B3F"<<eol;
-     else
-      ROS_WARN_STREAM("Incorrect Motor Command");
-}
 
 void Controller::read() {
   ROS_DEBUG_STREAM_NAMED("serial", "Bytes waiting: " << serial_->available());
@@ -247,6 +236,34 @@ void Controller::processFeedback(std::string msg) {
     return;
   }
 }
+void Controller::brakeCallback(const geometry_msgs::Twist::ConstPtr& twist)
+{
+  if (twist->angular.z>100)
+    leftBrake();
+  else 
+    zeroBrakeL();
+  if (twist->angular.z<-100)
+    rightBrake();
+  else
+    zeroBrakeR();
+}
+
+void Controller::rightBrake(){
+  tx_buffer_.str("");
+  tx_buffer_<<"!B3F\r\n";serial_->write(tx_buffer_.str());ROS_WARN_STREAM(tx_buffer_);
+ }
+void Controller::leftBrake(){
+  tx_buffer_.str("");
+  tx_buffer_<<"!A3F\r\n";serial_->write(tx_buffer_.str());ROS_WARN_STREAM(tx_buffer_);
+ }
+void Controller::zeroBrakeR(){
+  tx_buffer_.str("");
+  tx_buffer_<<"!b7F\r\n";serial_->write(tx_buffer_.str());ROS_WARN_STREAM(tx_buffer_);
+ }
+void Controller::zeroBrakeL(){
+  tx_buffer_.str("");
+  tx_buffer_<<"!a7F\r\n";serial_->write(tx_buffer_.str());ROS_WARN_STREAM(tx_buffer_);
+ }
 
 bool Controller::downloadScript() {
   ROS_DEBUG("Commanding driver to stop executing script.");

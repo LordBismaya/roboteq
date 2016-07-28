@@ -1,7 +1,10 @@
 <launch>
+  <remap from="argo_base/cmd_vel" to="roboteq_driver/argo_base/cmd_vel"/>
   <arg name="port" default="/dev/ttyUSB0" />
-  <node pkg="roboteq_driver" type="driver_node" name="roboteq_driver" output="screen">
+    <node pkg="roboteq_driver" type="driver_node" name="roboteq_driver" output="screen">
+    
     <param name="port" value="$(arg port)" />
     <param name="value" value="9600" />
+    
   </node>
 </launch>

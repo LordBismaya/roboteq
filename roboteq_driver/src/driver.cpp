@@ -25,7 +25,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "roboteq_driver/controller.h"
 #include "roboteq_driver/channel.h"
-
+#include <geometry_msgs/Twist.h>
 #include "ros/ros.h"
 
 
@@ -40,6 +40,9 @@ int main(int argc, char **argv) {
 
   // Interface to motor controller.
   roboteq::Controller controller(port.c_str(), baud);
+
+  
+  
 
   // Setup channels.
   if (nh.hasParam("channels")) {
@@ -63,8 +66,20 @@ int main(int argc, char **argv) {
   
     controller.initialize();
     ROS_WARN_STREAM("Controller Connected");
+    ROS_WARN_STREAM("Left Brake Check");
+    controller.leftBrake();  
+    sleep(1);
+    ROS_WARN_STREAM("Left Brake Check Reverse");
+    controller.zeroBrakeL();  
+    sleep(1);
     
-    controller.forward(1);  
+    ROS_WARN_STREAM("Right Brake Check");
+    controller.rightBrake();  
+    sleep(1);
+    ROS_WARN_STREAM("Right Brake Check Reverse");
+    controller.zeroBrakeR();  
+    sleep(1);
+
     if (controller.connected()) {
       ros::AsyncSpinner spinner(1);
       spinner.start();

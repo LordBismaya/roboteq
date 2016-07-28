@@ -26,7 +26,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define ROBOTEQ_CONTROLLER
 
 #include "ros/ros.h"
-
+#include <geometry_msgs/Twist.h>
 #include <boost/thread/condition_variable.hpp>
 #include <boost/lexical_cast.hpp>
 #include <stdint.h>
@@ -55,7 +55,7 @@ private :
 
   ros::NodeHandle nh_;
   ros::Publisher pub_status_;
-
+  ros::Subscriber argo_cmd_sub_;
   void read();
   void write(std::string);
 
@@ -111,12 +111,14 @@ protected:
 public :
   Controller (const char *port, int baud);
   ~Controller();
-
+  void brakeCallback(const geometry_msgs::Twist::ConstPtr& twist);
   void addChannel(Channel* channel);
   void connect();
   void initialize();
-  void forward(int LR);
-  void backward(int LR);
+  void rightBrake();
+  void leftBrake();
+  void zeroBrakeL();
+  void zeroBrakeR();
   bool connected() { return connected_; }
   void spinOnce() { read();}
   void flush();
