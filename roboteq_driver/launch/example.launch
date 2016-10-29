@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <launch>
   <remap from="argo_base/cmd_vel" to="roboteq_driver/argo_base/cmd_vel"/>
   <arg name="port" default="/dev/sensors/roboteq" />

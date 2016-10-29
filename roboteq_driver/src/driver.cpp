@@ -4,6 +4,7 @@ Software License Agreement (BSD)
 \file      driver.cpp
 \authors   Mike Purvis <mpurvis@clearpathrobotics.com>
            Mike Irvine <mirvine@clearpathrobotics.com>
+\modified  Bismaya Sahoo <bsahoo@uwaterloo.ca>
 \copyright Copyright (c) 2013, Clearpath Robotics, Inc., All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
@@ -61,24 +62,32 @@ int main(int argc, char **argv) {
 
   // Attempt to connect and run.
   while (ros::ok()) {
+    //Connect
     ROS_DEBUG("Attempting connection to %s at %i baud.", port.c_str(), baud);
     controller.connect();
+    ROS_WARN_STREAM("Port Open. Controller Connected");
   
-    controller.initialize();
-    ROS_WARN_STREAM("Controller Connected");
+   int err=controller.initialize();
+
+   if (err==1)
+   {
+    ROS_WARN_STREAM("Mo Message Receieved");
+   }
+
+    //Bring Both Left and Right Brakes to Unlock Position
     ROS_WARN_STREAM("Left Brake Check");
-    controller.leftBrake();  
+//    controller.leftBrake();  
     sleep(1);
     ROS_WARN_STREAM("Left Brake Check Reverse");
-    controller.zeroBrakeL();  
+ //   controller.zeroBrakeL();  
     sleep(1);
-  //  controller.leftBrake();  
+    //controller.leftBrake();  
     sleep(1);
     ROS_WARN_STREAM("Right Brake Check");
-    controller.rightBrake();  
+//    controller.rightBrake();  
     sleep(1);
     ROS_WARN_STREAM("Right Brake Check Reverse");
-    controller.zeroBrakeR();  
+//    controller.zeroBrakeR();  
     sleep(1);
     //controller.rightBrake();
     sleep(1);
@@ -90,8 +99,8 @@ int main(int argc, char **argv) {
         controller.spinOnce();
       }
       // Make sure brakes are in the initial position.
-      zeroBrakeR();
-      zeroBrakeL();
+//      controller.zeroBrakeR();
+ //     controller.zeroBrakeL();
       spinner.stop();
     } else {
       ROS_DEBUG("Problem connecting to serial device.");

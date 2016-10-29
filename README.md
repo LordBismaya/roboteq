@@ -19,3 +19,16 @@ July 27
 Made changes to the code. Parity. Stop bits. and Initialization.
 The code had worked once. Not working now.
 Possible cause. random values in the _txBuffer. 
+
+July 28
+Code working. But is still buggy. Strangely enough, the Controller::Write() function doesnt work properly to send the brake commands. This probably might be due to the mutexes that lock during read and write. What worked was storing the message as a string in the tx_buffer and using serial_->write() and then flushing it. NOte the tx_buffer was cleared prior to these operations.
+
+Sept 28
+Added fail safe loops. Roboteq now connects by default. Arduino node published brake feedback on brakeInfo msg of rosserial_adc type.
+
+TODO
+=====
+1. Feedback loops.
+2. Initial Position Fwd or Reverse
+3. A dedicated button for connect .
+4. Fail Safe brakes.

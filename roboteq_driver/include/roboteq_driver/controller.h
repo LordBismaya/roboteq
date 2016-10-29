@@ -61,6 +61,7 @@ private :
 
   void processStatus(std::string msg);
   void processFeedback(std::string msg);
+  int state;
 
 protected:
   // These data members are the core of the synchronization strategy in this class.
@@ -115,7 +116,8 @@ public :
   void brakeCallbackSafe(const geometry_msgs::Twist::ConstPtr& twist);  
   void addChannel(Channel* channel);
   void connect();
-  void initialize();
+  void connectNew();
+  int initialize();
   void rightBrake();
   void leftBrake();
   void zeroBrakeL();
