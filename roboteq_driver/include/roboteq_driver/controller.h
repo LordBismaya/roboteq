@@ -32,13 +32,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdint.h>
 #include <string>
 #include <rosserial_arduino/Adc.h>
+#include <sensor_msgs/Joy.h>
 
 //Brake Limit ADC Values HARD
-#define HARD_HIGH_0 275
-#define HARD_LOW_0 140
+#define HARD_HIGH_LEFT 275
+#define HARD_LOW_LEFT 140
 
-#define HARD_HIGH_1 275
-#define HARD_LOW_1 130
+#define HARD_HIGH_RIGHT 275
+#define HARD_LOW_RIGHT 140
+
+//Joy Buttons Defination
+#define LEFT_JOY_BUTTON 4
+#define RIGHT_JOY_BUTTON 5
+#define INIT_JOY_BUTTON 7
+#define TOZERO_JOY_BUTTON 6
+
 
 
 namespace serial {
@@ -64,14 +72,14 @@ private :
 
   ros::NodeHandle nh_;
   ros::Publisher pub_status_;
-  ros::Subscriber argo_cmd_sub_;
-  ros::Subscriber argo_brake_sub;
+  ros::Subscriber argo_brake_sub_;
+  ros::Subscriber argo_joy_sub_;
   void read();
   void write(std::string);
 
   void processStatus(std::string msg);
   void processFeedback(std::string msg);
-  int state;
+  int leftBrakeCmd,rightBrakeCmd,doInitializationCmd,brakesTOZeroCmd;
   int leftBrakePos,rightBrakePos;
 
 protected:
@@ -123,12 +131,10 @@ protected:
 public :
   Controller (const char *port, int baud);
   ~Controller();
-  void brakeCallback(const geometry_msgs::Twist::ConstPtr& twist);
   void brakeFeedbackCallback(const rosserial_arduino::Adc::ConstPtr& brakeInfo);
-  void brakeCallbackSafe(const geometry_msgs::Twist::ConstPtr& twist);  
+  void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);
   void addChannel(Channel* channel);
   void connect();
-  void connectNew();
   int initialize();
   void showFeedbackPos();
   void moveBrakesToZero();
