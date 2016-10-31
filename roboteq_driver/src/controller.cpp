@@ -56,7 +56,7 @@ Controller::Controller(const char *port, int baud)
 {
   pub_status_ = nh_.advertise<roboteq_msgs::Status>("status", 1);
   argo_brake_sub_=nh_.subscribe<rosserial_arduino::Adc>("brakeInfo",1,&Controller::brakeFeedbackCallback, this);
-  argo_joy_sub_=nh_.subscribe<sensor_msgs::Joy>("joy", 10, &Controller::joyCallback, this);	
+  argo_joy_sub_=nh_.subscribe<sensor_msgs::Joy>("joy", 1, &Controller::joyCallback, this);	
   //left and Right back are outside limits so that feedback can be checked.
   leftBrakePos=0;
   rightBrakePos=0;
@@ -79,12 +79,14 @@ void Controller::moveBrakesToZero()
 	while(leftBrakePos>HARD_LOW_LEFT)
   	{
    		zeroBrakeL();
+      this->spinOnce();
     	ROS_INFO("LeftBrakePos:%d",leftBrakePos);
  	}
 	ROS_INFO("Done with LEFT");
 	while(rightBrakePos>HARD_LOW_RIGHT)
     {
     	zeroBrakeR();
+      this->spinOnce();
   	  	ROS_INFO("RightBrakePos:%d",rightBrakePos);
   	}
   	ROS_INFO("Done with RIGHT");
@@ -137,27 +139,36 @@ int Controller::initialize(){
   while(msg[0]!=':')
   {
 
+    msg="";
     msg = serial_->readline(max_line_length, eol);
-    ROS_WARN_STREAM(msg);
+    ROS_WARN_STREAM("Rx1: "<<msg[0]);
+    ROS_WARN_STREAM("Rx1M: "<<msg);
+     ROS_WARN_STREAM("Rx1E: "<<msg.at(msg.length()-2));
     if (msg[0]=='W')
     {
       ROS_WARN_STREAM("Already in RS232 Mode");
       break;
     }
+    
   }
   ROS_WARN_STREAM("Serial Found. Changing to RS232 Mode");
-  while(msg[0]==':')
+  ROS_WARN_STREAM("Rx2: "<<msg[0]);
+  
+  while(msg.at(msg.length()-2) != 'K')
   {
     tx_buffer_.str("");
     tx_buffer_<<'\r';
     serial_->write(tx_buffer_.str());
   
     msg=serial_->readline(max_line_length, eol);
-  
-    ROS_WARN_STREAM("Rx:"<<msg);
-  
-    if (msg.find("OK") != std::string::npos)
-    break;
+        
+    ROS_WARN_STREAM("Rx3: "<<msg[0]);
+    ROS_WARN_STREAM("Rx3M: "<<msg);
+    ROS_WARN_STREAM("Rx3E "<<msg.at(msg.length()-2));
+    
+    //if (msg.find('W') != std::string::npos)
+    //break;
+  sleep(0.1);
   }
   ROS_WARN_STREAM("Entered RS-232 Mode.Intialization Complete");
   return 0;
@@ -184,25 +195,27 @@ void Controller::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 	doInitializationCmd=(joy->buttons[INIT_JOY_BUTTON])?1:0;
 	brakesTOZeroCmd=(joy->buttons[TOZERO_JOY_BUTTON])?1:0;
 
+  ROS_INFO("CMD %d, BTN %d, POS%d, FBBK %d,",leftBrakeCmd,joy->buttons[LEFT_JOY_BUTTON],leftBrakePos,isFeedbackPresent());
+
 	if(doInitializationCmd)
 		initialize();
 	if(brakesTOZeroCmd)
 		moveBrakesToZero();
 	
 	if(leftBrakeCmd==1)
-		leftBrake();
-	else if (leftBrakeCmd==-1);
+	leftBrake();
+   if (leftBrakeCmd==-1)
 		zeroBrakeL();
 
 	if(rightBrakeCmd==1)
 		rightBrake();
-	else if(rightBrakeCmd==-1)
+	if(rightBrakeCmd==-1)
 		zeroBrakeR();
 }
 void Controller::rightBrake(){
   tx_buffer_.str("");
   tx_buffer_<<"!B7F\r\n";serial_->write(tx_buffer_.str());ROS_WARN_STREAM(tx_buffer_);
- }
+   }
 void Controller::leftBrake(){
   tx_buffer_.str("");
   tx_buffer_<<"!A7F\r\n";serial_->write(tx_buffer_.str());ROS_WARN_STREAM(tx_buffer_);

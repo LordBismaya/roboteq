@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
     ROS_DEBUG("Attempting connection to %s at %i baud.", port.c_str(), baud);
     controller.connect();
     ROS_WARN_STREAM("Port Open. Controller Connected");
-  
+    sleep(3);//to make sure initialized
    int err=controller.initialize();
 
    if (err==1)
@@ -77,10 +77,10 @@ int main(int argc, char **argv) {
     //Check to see if feedback is present
     int fdbck_status=controller.isFeedbackPresent();
     ROS_INFO("Feedback Status::%d ",fdbck_status);
-    sleep(3);
+    //sleep(3);
 
     controller.showFeedbackPos();
-    sleep(10);
+    //sleep(10);
     //Move Brakes to start Position
 
     //Check if both brakes are working
