@@ -200,7 +200,7 @@ void Controller::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 	if(doInitializationCmd)
 		initialize();
 	if(brakesTOZeroCmd)
-		moveBrakesToZero();
+		//moveBrakesToZero();
 	
 	if(leftBrakeCmd==1)
 	leftBrake();
