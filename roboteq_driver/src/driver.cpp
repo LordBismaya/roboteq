@@ -74,22 +74,31 @@ int main(int argc, char **argv) {
     ROS_WARN_STREAM("Mo Message Receieved");
    }
 
-    //Bring Both Left and Right Brakes to Unlock Position
+    //Check to see if feedback is present
+    int fdbck_status=controller.isFeedbackPresent();
+    ROS_INFO("Feedback Status::%d ",fdbck_status);
+    sleep(3);
+
+    controller.showFeedbackPos();
+    sleep(10);
+    //Move Brakes to start Position
+    controller.moveBrakesToZero();
+
+    ROS_INFO("Moving to ZeroPos");
+    sleep(200);
+
+    //Check if both brakes are working
     ROS_WARN_STREAM("Left Brake Check");
-//    controller.leftBrake();  
+    controller.leftBrake();  
     sleep(1);
     ROS_WARN_STREAM("Left Brake Check Reverse");
- //   controller.zeroBrakeL();  
-    sleep(1);
-    //controller.leftBrake();  
+    controller.zeroBrakeL();  
     sleep(1);
     ROS_WARN_STREAM("Right Brake Check");
-//    controller.rightBrake();  
+    controller.rightBrake();  
     sleep(1);
     ROS_WARN_STREAM("Right Brake Check Reverse");
-//    controller.zeroBrakeR();  
-    sleep(1);
-    //controller.rightBrake();
+    controller.zeroBrakeR();  
     sleep(1);
 
     if (controller.connected()) {

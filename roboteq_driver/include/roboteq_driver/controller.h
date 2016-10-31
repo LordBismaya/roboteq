@@ -31,6 +31,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <boost/lexical_cast.hpp>
 #include <stdint.h>
 #include <string>
+#include <rosserial_arduino/Adc.h>
+
+//Brake Limit ADC Values HARD
+#define HARD_HIGH_0 275
+#define HARD_LOW_0 140
+
+#define HARD_HIGH_1 275
+#define HARD_LOW_1 130
+
 
 namespace serial {
   class Serial;
@@ -56,12 +65,14 @@ private :
   ros::NodeHandle nh_;
   ros::Publisher pub_status_;
   ros::Subscriber argo_cmd_sub_;
+  ros::Subscriber argo_brake_sub;
   void read();
   void write(std::string);
 
   void processStatus(std::string msg);
   void processFeedback(std::string msg);
   int state;
+  int leftBrakePos,rightBrakePos;
 
 protected:
   // These data members are the core of the synchronization strategy in this class.
@@ -113,11 +124,15 @@ public :
   Controller (const char *port, int baud);
   ~Controller();
   void brakeCallback(const geometry_msgs::Twist::ConstPtr& twist);
+  void brakeFeedbackCallback(const rosserial_arduino::Adc::ConstPtr& brakeInfo);
   void brakeCallbackSafe(const geometry_msgs::Twist::ConstPtr& twist);  
   void addChannel(Channel* channel);
   void connect();
   void connectNew();
   int initialize();
+  void showFeedbackPos();
+  void moveBrakesToZero();
+  bool isFeedbackPresent();
   void rightBrake();
   void leftBrake();
   void zeroBrakeL();

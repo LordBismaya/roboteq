@@ -60,14 +60,45 @@ Controller::Controller(const char *port, int baud)
 {
   pub_status_ = nh_.advertise<roboteq_msgs::Status>("status", 1);
   argo_cmd_sub_=nh_.subscribe<geometry_msgs::Twist>("argo_base/cmd_vel", 100, &Controller::brakeCallback, this);
+  argo_brake_sub=nh_.subscribe<rosserial_arduino::Adc>("brakeInfo",1,&Controller::brakeFeedbackCallback, this);
   state=0;//Default state
+  //left and Right back are outside limits so that feedback can be checked.
+  leftBrakePos=0;
+  rightBrakePos=0;
 }
 
 Controller::~Controller() {
-  for(int i=0;i<10;i++){
+
+  //Make sure brakes are at the start so the vehicle can be pushed.
+  moveBrakesToZero();
+}
+void Controller::showFeedbackPos()
+{
+ROS_INFO("LeftBrakePos:%d  RightBrakePos:%d",leftBrakePos,rightBrakePos);
+}
+
+void Controller::moveBrakesToZero()
+{
+  while(leftBrakePos>HARD_LOW_0)
+  {
     zeroBrakeL();
-    zeroBrakeR();
+    ROS_INFO("LeftBrakePos:%d",leftBrakePos);
   }
+  ROS_INFO("Done with LEFT");
+  while(rightBrakePos>HARD_LOW_1)
+   {
+    zeroBrakeR();
+    ROS_INFO("RightBrakePos:%d",rightBrakePos);
+  }
+  ROS_INFO("Done with RIGHT");
+}
+bool Controller::isFeedbackPresent()
+{
+  //Check to see if within limits
+  if (leftBrakePos>=HARD_LOW_0 && leftBrakePos<=HARD_HIGH_0 && rightBrakePos>=HARD_LOW_1 && rightBrakePos<=HARD_HIGH_1)
+    return 1;
+  else 
+    return 0;
 }
 
 void Controller::addChannel(Channel* channel) {
@@ -301,6 +332,10 @@ void Controller::processFeedback(std::string msg) {
 }
 void Controller::brakeCallback(const geometry_msgs::Twist::ConstPtr& twist)
 {
+  //Feeback is sent as y and z of lin twist msg
+ // leftBrakePos=twist->linear.y;
+ // rightBrakePos=twist->linear.z;
+  //Command is sent as x and y of ang twist msg
   if (twist->angular.x==1)
     leftBrake();
   else if (twist->angular.x==-1)
@@ -309,6 +344,11 @@ void Controller::brakeCallback(const geometry_msgs::Twist::ConstPtr& twist)
     rightBrake();
   else if (twist->angular.y==-1)
     zeroBrakeR();
+}
+void Controller::brakeFeedbackCallback(const rosserial_arduino::Adc::ConstPtr& brakeInfo)
+{
+  leftBrakePos=brakeInfo->adc0;
+  rightBrakePos=brakeInfo->adc1;
 }
 void Controller::brakeCallbackSafe(const geometry_msgs::Twist::ConstPtr& twist)
 {
