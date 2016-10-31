@@ -46,10 +46,6 @@ extern const int script_ver = 28;
 namespace roboteq {
 
 const std::string eol("\r");
-const std::string start_msg("\r\r\r\r\r\r\r\r\r\r\r\r");
-const std::string start_msg2("\n\n\n\n\n\n\n\n\n\n\n");
-const std::string start_msg3("\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r");
-
 
 const size_t max_line_length(128);
 
@@ -59,9 +55,8 @@ Controller::Controller(const char *port, int baud)
     command("!", this), query("?", this), param("^", this)
 {
   pub_status_ = nh_.advertise<roboteq_msgs::Status>("status", 1);
-  argo_cmd_sub_=nh_.subscribe<geometry_msgs::Twist>("argo_base/cmd_vel", 100, &Controller::brakeCallback, this);
-  argo_brake_sub=nh_.subscribe<rosserial_arduino::Adc>("brakeInfo",1,&Controller::brakeFeedbackCallback, this);
-  state=0;//Default state
+  argo_brake_sub_=nh_.subscribe<rosserial_arduino::Adc>("brakeInfo",1,&Controller::brakeFeedbackCallback, this);
+  argo_joy_sub_=nh_.subscribe<sensor_msgs::Joy>("joy", 10, &Controller::joyCallback, this);	
   //left and Right back are outside limits so that feedback can be checked.
   leftBrakePos=0;
   rightBrakePos=0;
@@ -69,71 +64,47 @@ Controller::Controller(const char *port, int baud)
 
 Controller::~Controller() {
 
-  //Make sure brakes are at the start so the vehicle can be pushed.
-  moveBrakesToZero();
+  	//Make sure brakes are at the start so the vehicle can be pushed.
+	moveBrakesToZero();
 }
+
 void Controller::showFeedbackPos()
 {
-ROS_INFO("LeftBrakePos:%d  RightBrakePos:%d",leftBrakePos,rightBrakePos);
+	ROS_INFO("LeftBrakePos:%d  RightBrakePos:%d",leftBrakePos,rightBrakePos);
 }
 
 void Controller::moveBrakesToZero()
 {
-  while(leftBrakePos>HARD_LOW_0)
-  {
-    zeroBrakeL();
-    ROS_INFO("LeftBrakePos:%d",leftBrakePos);
-  }
-  ROS_INFO("Done with LEFT");
-  while(rightBrakePos>HARD_LOW_1)
-   {
-    zeroBrakeR();
-    ROS_INFO("RightBrakePos:%d",rightBrakePos);
-  }
-  ROS_INFO("Done with RIGHT");
+	ROS_INFO("Moving Brakes to Zero Position");
+	while(leftBrakePos>HARD_LOW_LEFT)
+  	{
+   		zeroBrakeL();
+    	ROS_INFO("LeftBrakePos:%d",leftBrakePos);
+ 	}
+	ROS_INFO("Done with LEFT");
+	while(rightBrakePos>HARD_LOW_RIGHT)
+    {
+    	zeroBrakeR();
+  	  	ROS_INFO("RightBrakePos:%d",rightBrakePos);
+  	}
+  	ROS_INFO("Done with RIGHT");
 }
+
 bool Controller::isFeedbackPresent()
 {
   //Check to see if within limits
-  if (leftBrakePos>=HARD_LOW_0 && leftBrakePos<=HARD_HIGH_0 && rightBrakePos>=HARD_LOW_1 && rightBrakePos<=HARD_HIGH_1)
-    return 1;
-  else 
-    return 0;
+	if (leftBrakePos>=HARD_LOW_LEFT-10 && leftBrakePos<=HARD_HIGH_LEFT+10 && rightBrakePos>=HARD_LOW_RIGHT-10 && rightBrakePos<=HARD_HIGH_RIGHT+10)
+    	return 1;
+  	else 
+    	return 0;
 }
 
 void Controller::addChannel(Channel* channel) {
   channels_.push_back(channel);
 }
 
+
 void Controller::connect() {
-  if (!serial_) serial_ = new serial::Serial();
-  serial::Timeout to(serial::Timeout::simpleTimeout(500));
-  serial_->setTimeout(to);
-  serial_->setPort(port_);
-  serial_->setBaudrate(baud_);
-  ROS_WARN_STREAM("Star");
-  for (int tries = 0; tries < 5; tries++) {
-    try {
-      serial_->open();
-      query << "FID" << send;
-      setSerialEcho(false);
-      flush();
-    } catch (serial::IOException) {
-    }
-       ROS_WARN_STREAM("SENDING \n. ");
-    if (serial_->isOpen()) {
-      connected_ = true;
-      return;
-    } else {
-      connected_ = false;
-      ROS_INFO("Bad Connection with serial port Error %s",port_);
-    }
-  }
-
-  ROS_INFO("Motor controller not responding.");
-}
-
-void Controller::connectNew() {
   if (!serial_) serial_ = new serial::Serial();
   serial::Timeout to(serial::Timeout::simpleTimeout(500));
   serial_->setTimeout(to);
@@ -144,7 +115,6 @@ void Controller::connectNew() {
   for (int tries = 0; tries < 5; tries++) {
     try {
       serial_->open();
-      //query << "FID" << send;
       setSerialEcho(true);
       flush();
     } catch (serial::IOException) {
@@ -163,14 +133,12 @@ void Controller::connectNew() {
 }
 
 int Controller::initialize(){
-  //sleep(20);
   std::string msg = serial_->readline(max_line_length, eol);
   while(msg[0]!=':')
   {
 
     msg = serial_->readline(max_line_length, eol);
     ROS_WARN_STREAM(msg);
-   // ROS_WARN_STREAM("On STEP 1 of 2");
     if (msg[0]=='W')
     {
       ROS_WARN_STREAM("Already in RS232 Mode");
@@ -190,11 +158,67 @@ int Controller::initialize(){
   
     if (msg.find("OK") != std::string::npos)
     break;
-    //ROS_WARN_STREAM("On Step 2 of 2");
   }
   ROS_WARN_STREAM("Entered RS-232 Mode.Intialization Complete");
   return 0;
 }
+
+void Controller::brakeFeedbackCallback(const rosserial_arduino::Adc::ConstPtr& brakeInfo)
+{
+  leftBrakePos=brakeInfo->adc0;
+  rightBrakePos=brakeInfo->adc1;
+}
+void Controller::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
+{
+	if(isFeedbackPresent())
+	{
+		leftBrakeCmd=(joy->buttons[LEFT_JOY_BUTTON])?((leftBrakePos<HARD_HIGH_LEFT)?1:0):((leftBrakePos>HARD_LOW_LEFT)?-1:0);
+		rightBrakeCmd=(joy->buttons[RIGHT_JOY_BUTTON])?((rightBrakePos<HARD_HIGH_RIGHT)?1:0):((rightBrakePos>HARD_LOW_RIGHT)?-1:0);
+	}
+	else
+	{
+		leftBrakeCmd=(joy->buttons[LEFT_JOY_BUTTON])?1:-1;
+		rightBrakeCmd=(joy->buttons[RIGHT_JOY_BUTTON])?1:-1;
+	}
+
+	doInitializationCmd=(joy->buttons[INIT_JOY_BUTTON])?1:0;
+	brakesTOZeroCmd=(joy->buttons[TOZERO_JOY_BUTTON])?1:0;
+
+	if(doInitializationCmd)
+		initialize();
+	if(brakesTOZeroCmd)
+		moveBrakesToZero();
+	
+	if(leftBrakeCmd==1)
+		leftBrake();
+	else if (leftBrakeCmd==-1);
+		zeroBrakeL();
+
+	if(rightBrakeCmd==1)
+		rightBrake();
+	else if(rightBrakeCmd==-1)
+		zeroBrakeR();
+}
+void Controller::rightBrake(){
+  tx_buffer_.str("");
+  tx_buffer_<<"!B7F\r\n";serial_->write(tx_buffer_.str());ROS_WARN_STREAM(tx_buffer_);
+ }
+void Controller::leftBrake(){
+  tx_buffer_.str("");
+  tx_buffer_<<"!A7F\r\n";serial_->write(tx_buffer_.str());ROS_WARN_STREAM(tx_buffer_);
+
+ }
+void Controller::zeroBrakeR(){
+  tx_buffer_.str("");
+  tx_buffer_<<"!b7F\r\n";serial_->write(tx_buffer_.str());ROS_WARN_STREAM(tx_buffer_);
+ }
+void Controller::zeroBrakeL(){
+  tx_buffer_.str("");
+  tx_buffer_<<"!a7F\r\n";serial_->write(tx_buffer_.str());ROS_WARN_STREAM(tx_buffer_);
+ }
+
+
+
 
 
 
@@ -226,7 +250,6 @@ void Controller::read() {
     } 
     else if (msg[0]==':')
     {
-      state=1;
       ROS_WARN_STREAM("Serial No. Flashing. Safe to Hit Enter x10");
       ROS_WARN_STREAM("RX: " << msg);
     }
@@ -330,55 +353,6 @@ void Controller::processFeedback(std::string msg) {
     return;
   }
 }
-void Controller::brakeCallback(const geometry_msgs::Twist::ConstPtr& twist)
-{
-  //Feeback is sent as y and z of lin twist msg
- // leftBrakePos=twist->linear.y;
- // rightBrakePos=twist->linear.z;
-  //Command is sent as x and y of ang twist msg
-  if (twist->angular.x==1)
-    leftBrake();
-  else if (twist->angular.x==-1)
-    zeroBrakeL();
-  if (twist->angular.y==1)
-    rightBrake();
-  else if (twist->angular.y==-1)
-    zeroBrakeR();
-}
-void Controller::brakeFeedbackCallback(const rosserial_arduino::Adc::ConstPtr& brakeInfo)
-{
-  leftBrakePos=brakeInfo->adc0;
-  rightBrakePos=brakeInfo->adc1;
-}
-void Controller::brakeCallbackSafe(const geometry_msgs::Twist::ConstPtr& twist)
-{
-  if (twist->angular.x==1)
-    zeroBrakeL();
-  else 
-    leftBrake();
-  if (twist->angular.y==1)
-    zeroBrakeR();
-  else
-    rightBrake();
-}
-
-void Controller::rightBrake(){
-  tx_buffer_.str("");
-  tx_buffer_<<"!B7F\r\n";serial_->write(tx_buffer_.str());ROS_WARN_STREAM(tx_buffer_);
- }
-void Controller::leftBrake(){
-  tx_buffer_.str("");
-  tx_buffer_<<"!A7F\r\n";serial_->write(tx_buffer_.str());ROS_WARN_STREAM(tx_buffer_);
-
- }
-void Controller::zeroBrakeR(){
-  tx_buffer_.str("");
-  tx_buffer_<<"!b7F\r\n";serial_->write(tx_buffer_.str());ROS_WARN_STREAM(tx_buffer_);
- }
-void Controller::zeroBrakeL(){
-  tx_buffer_.str("");
-  tx_buffer_<<"!a7F\r\n";serial_->write(tx_buffer_.str());ROS_WARN_STREAM(tx_buffer_);
- }
 
 bool Controller::downloadScript() {
   ROS_DEBUG("Commanding driver to stop executing script.");

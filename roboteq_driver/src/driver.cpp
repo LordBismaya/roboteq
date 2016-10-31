@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
 
    if (err==1)
    {
-    ROS_WARN_STREAM("Mo Message Receieved");
+    ROS_WARN_STREAM("No Message Receieved");
    }
 
     //Check to see if feedback is present
@@ -82,10 +82,6 @@ int main(int argc, char **argv) {
     controller.showFeedbackPos();
     sleep(10);
     //Move Brakes to start Position
-    controller.moveBrakesToZero();
-
-    ROS_INFO("Moving to ZeroPos");
-    sleep(200);
 
     //Check if both brakes are working
     ROS_WARN_STREAM("Left Brake Check");
